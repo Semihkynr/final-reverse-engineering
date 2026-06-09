@@ -1,0 +1,68 @@
+# ============================================================
+# docker-compose.yml — Reverse Engineering Framework
+# BGT210 · Istinye University · Semih Kaynar
+# ============================================================
+version: '3.8'
+
+services:
+  # Main static analyzer service
+  analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: re_analyzer
+    env_file: .env
+    volumes:
+      - ./samples:/app/samples:ro        # Sample files (read-only)
+      - ./reports:/app/reports           # Analysis output
+      - ./logs:/app/logs
+    networks:
+      - analysis_isolated
+    # Override CMD to run interactively or pass arguments:
+    # docker-compose run analyzer --file samples/test.exe --output reports/
+    command: ["--help"]
+
+  # Report aggregator — converts JSON reports to final Markdown
+  reporter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: re_reporter
+    env_file: .env
+    volumes:
+      - ./reports:/app/reports
+    networks:
+      - analysis_isolated
+    entrypoint: ["python", "src/report_generator.py"]
+    command: ["--help"]
+    profiles:
+      - reporting
+
+  # String extractor — standalone string extraction service
+  strings:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: re_strings
+    env_file: .env
+    volumes:
+      - ./samples:/app/samples:ro
+      - ./reports:/app/reports
+    networks:
+      - analysis_isolated
+    entrypoint: ["python", "src/string_extractor.py"]
+    profiles:
+      - strings
+
+networks:
+  # Isolated network — no internet access for analysis containers
+  analysis_isolated:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  reports:
+  logs:

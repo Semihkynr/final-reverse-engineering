@@ -1,0 +1,79 @@
+# ============================================================
+# .gitignore — Reverse Engineering Framework
+# BGT210 · Istinye University · Semih Kaynar
+# ============================================================
+
+# --- Environment & Secrets ---
+.env
+*.env
+.env.local
+.env.production
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+*.whl
+
+# --- Analysis Artifacts (never commit malware samples!) ---
+samples/
+*.exe
+*.dll
+*.bin
+*.malware
+*.vir
+*.suspect
+*.infected
+
+# --- Reports (generated, not source) ---
+reports/
+tmp/
+*.pcap
+*.dmp
+*.dump
+*.cap
+
+# --- Logs ---
+logs/
+*.log
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# --- YARA compiled rules ---
+*.yarc
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.ipynb
+
+# --- Docker ---
+.docker/
+
+# --- OS ---
+.DS_Store
+ehthumbs.db
+Desktop.ini
