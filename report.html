@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BGT210 — RE Analysis Dashboard | Semih Kaynar</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --orange: #e3b341;
+      --purple: #bc8cff;
+      --cyan: #39d353;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    header .title-block h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    header .title-block p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .badge-purple { background: #3d1f6e; color: var(--purple); }
+    .badge-blue   { background: #1a3a5c; color: var(--accent); }
+    .badge-green  { background: #1a3a2a; color: var(--green); }
+    .badge-yellow { background: #3a2a00; color: var(--yellow); }
+
+    /* ── Layout ── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin: 16px 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    @media (max-width: 900px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* ── Stat boxes ── */
+    .stat-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-box .value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .stat-box .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 4px;
+    }
+    .stat-critical .value { color: var(--red); }
+    .stat-high .value     { color: var(--orange); }
+    .stat-medium .value   { color: var(--yellow); }
+    .stat-ok .value       { color: var(--green); }
+
+    /* ── Risk Meter ── */
+    .risk-meter {
+      background: var(--surface2);
+      border-radius: 6px;
+      height: 12px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .risk-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 1s ease;
+    }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+
+    code {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 12px;
+      color: var(--cyan);
+    }
+
+    /* ── Risk label ── */
+    .risk-label {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .risk-CRITICAL { background: #3a0a0a; color: var(--red); border: 1px solid var(--red); }
+    .risk-HIGH     { background: #3a1a00; color: var(--orange); border: 1px solid var(--orange); }
+    .risk-MEDIUM   { background: #3a2a00; color: var(--yellow); border: 1px solid var(--yellow); }
+    .risk-LOW      { background: #1a3a2a; color: var(--green); border: 1px solid var(--green); }
+
+    /* ── Phase pipeline ── */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+    .phase {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      min-width: 130px;
+    }
+    .phase.done   { border-color: var(--green); color: var(--green); }
+    .phase.active { border-color: var(--accent); color: var(--accent); background: #1a2a3a; }
+    .arrow {
+      color: var(--text-muted);
+      font-size: 20px;
+      padding: 0 8px;
+    }
+
+    /* ── Checklist ── */
+    .checklist li {
+      list-style: none;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .check-ok   { color: var(--green); font-size: 16px; }
+    .check-warn { color: var(--yellow); font-size: 16px; }
+
+    /* ── IOC list ── */
+    .ioc-tag {
+      display: inline-block;
+      background: #1a1a3a;
+      border: 1px solid #3a3a7a;
+      color: var(--purple);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-family: monospace;
+      margin: 2px;
+    }
+
+    /* ── Terminal block ── */
+    .terminal {
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 12px;
+      color: #b5e853;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.7;
+    }
+    .terminal .prompt { color: var(--accent); }
+    .terminal .comment { color: var(--text-muted); }
+    .terminal .output { color: var(--text); }
+    .terminal .success { color: var(--green); }
+    .terminal .warning { color: var(--yellow); }
+    .terminal .error   { color: var(--red); }
+
+    /* ── MITRE badge ── */
+    .mitre-id {
+      background: #2a1a3a;
+      color: var(--purple);
+      border: 1px solid #5a3a7a;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 16px 32px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════ -->
+<header>
+  <div class="title-block">
+    <h1>⚙ RE Analysis Dashboard</h1>
+    <p>BGT210 — Reverse Engineering · Istinye University · Spring 2025-2026</p>
+  </div>
+  <div>
+    <span class="badge badge-purple">BGT210</span>
+    <span class="badge badge-blue">Python</span>
+    <span class="badge badge-green">Static Analysis</span>
+    <span class="badge badge-yellow">In Progress</span>
+  </div>
+</header>
+
+<!-- ══ MAIN ════════════════════════════════════════════════ -->
+<div class="container">
+
+  <!-- Project Info -->
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="card">
+      <h2>👤 Proje Sahibi</h2>
+      <table>
+        <tr><td style="color:var(--text-muted);width:140px;">Ad Soyad</td><td><strong>Semih Kaynar</strong></td></tr>
+        <tr><td style="color:var(--text-muted);">Öğrenci No</td><td><code>2420****1011</code></td></tr>
+        <tr><td style="color:var(--text-muted);">GitHub</td><td><a href="https://github.com/semihkynr" style="color:var(--accent);">@semihkynr</a></td></tr>
+        <tr><td style="color:var(--text-muted);">Ders</td><td>BGT210 — Reverse Engineering</td></tr>
+        <tr><td style="color:var(--text-muted);">Dönem</td><td>2025-2026 Bahar</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2>👨‍🏫 Öğretim Üyesi</h2>
+      <table>
+        <tr><td style="color:var(--text-muted);width:140px;">Ad Soyad</td><td><strong>Keyvan Arasteh</strong></td></tr>
+        <tr><td style="color:var(--text-muted);">GitHub</td><td><a href="https://github.com/keyvanarasteh" style="color:var(--accent);">@keyvanarasteh</a></td></tr>
+        <tr><td style="color:var(--text-muted);">E-posta</td><td>keyvan.arasteh@istinye.edu.tr</td></tr>
+        <tr><td style="color:var(--text-muted);">Website</td><td><a href="https://qline.tech" style="color:var(--accent);">qline.tech</a></td></tr>
+        <tr><td style="color:var(--text-muted);">Üniversite</td><td>Istinye University</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-4">
+    <div class="stat-box stat-critical">
+      <div class="value">4</div>
+      <div class="label">Analiz Fazı</div>
+    </div>
+    <div class="stat-box stat-high">
+      <div class="value">4</div>
+      <div class="label">Python Modülü</div>
+    </div>
+    <div class="stat-box stat-medium">
+      <div class="value">3</div>
+      <div class="label">Modül Dokümanı</div>
+    </div>
+    <div class="stat-box stat-ok">
+      <div class="value">✓</div>
+      <div class="label">Docker Hazır</div>
+    </div>
+  </div>
+
+  <!-- Methodology Pipeline -->
+  <div class="card" style="margin-top:20px;">
+    <h2>🔄 RE Metodoloji Pipeline</h2>
+    <div class="pipeline">
+      <div class="phase done">🔍 Static Analysis<br><small>Disassembly · Strings</small></div>
+      <div class="arrow">→</div>
+      <div class="phase done">⚡ Dynamic Analysis<br><small>Debugger · Sandbox</small></div>
+      <div class="arrow">→</div>
+      <div class="phase done">🌐 Network Monitoring<br><small>Packet Sniffing · C2</small></div>
+      <div class="arrow">→</div>
+      <div class="phase active">📄 Reporting<br><small>IOC · MITRE · CVSS</small></div>
+    </div>
+  </div>
+
+  <!-- Sample Analysis Result -->
+  <div class="grid-2">
+    <div class="card">
+      <h2>📁 Sample Metadata (Demo)</h2>
+      <table>
+        <tr><td style="color:var(--text-muted);width:120px;">Dosya</td><td><code>demo_sample.bin</code></td></tr>
+        <tr><td style="color:var(--text-muted);">Tür</td><td>PE (Windows Executable)</td></tr>
+        <tr><td style="color:var(--text-muted);">Mimari</td><td>x86-64</td></tr>
+        <tr><td style="color:var(--text-muted);">Packed</td><td><span class="risk-label risk-HIGH">NO</span></td></tr>
+        <tr><td style="color:var(--text-muted);">Risk Level</td><td><span class="risk-label risk-HIGH">HIGH</span></td></tr>
+        <tr><td style="color:var(--text-muted);">Risk Score</td><td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span>65/100</span>
+            <div class="risk-meter" style="flex:1;">
+              <div class="risk-fill" style="width:65%;background:var(--orange);"></div>
+            </div>
+          </div>
+        </td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>⚠️ Risk Faktörleri</h2>
+      <ul class="checklist">
+        <li><span class="check-warn">⚠</span> Şüpheli string tespiti: <code>cmd.exe /c</code></li>
+        <li><span class="check-warn">⚠</span> Şüpheli string: <code>WriteProcessMemory</code></li>
+        <li><span class="check-warn">⚠</span> Şüpheli string: <code>IsDebuggerPresent</code></li>
+        <li><span class="check-warn">⚠</span> C2 URL tespiti: <code>http://malware-c2.example.com</code></li>
+        <li><span class="check-warn">⚠</span> Registry persistence key</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Suspicious Imports -->
+  <div class="card">
+    <h2>📥 Suspicious Imports</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>DLL</th>
+          <th>Function</th>
+          <th>MITRE Technique</th>
+          <th>Risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>kernel32.dll</code></td>
+          <td><code>VirtualAllocEx</code></td>
+          <td><span class="mitre-id">T1055.001</span> Process Injection</td>
+          <td><span class="risk-label risk-CRITICAL">CRITICAL</span></td>
+        </tr>
+        <tr>
+          <td><code>kernel32.dll</code></td>
+          <td><code>WriteProcessMemory</code></td>
+          <td><span class="mitre-id">T1055.001</span> Process Injection</td>
+          <td><span class="risk-label risk-CRITICAL">CRITICAL</span></td>
+        </tr>
+        <tr>
+          <td><code>kernel32.dll</code></td>
+          <td><code>CreateRemoteThread</code></td>
+          <td><span class="mitre-id">T1055.001</span> Process Injection</td>
+          <td><span class="risk-label risk-CRITICAL">CRITICAL</span></td>
+        </tr>
+        <tr>
+          <td><code>kernel32.dll</code></td>
+          <td><code>IsDebuggerPresent</code></td>
+          <td><span class="mitre-id">T1622</span> Debugger Evasion</td>
+          <td><span class="risk-label risk-HIGH">HIGH</span></td>
+        </tr>
+        <tr>
+          <td><code>advapi32.dll</code></td>
+          <td><code>RegSetValueExA</code></td>
+          <td><span class="mitre-id">T1547.001</span> Registry Run Keys</td>
+          <td><span class="risk-label risk-HIGH">HIGH</span></td>
+        </tr>
+        <tr>
+          <td><code>ws2_32.dll</code></td>
+          <td><code>WSAStartup</code></td>
+          <td><span class="mitre-id">T1071.001</span> Web Protocols</td>
+          <td><span class="risk-label risk-MEDIUM">MEDIUM</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- IOC List -->
+  <div class="card">
+    <h2>🎯 IOC (Indicators of Compromise)</h2>
+    <h3>Network Indicators</h3>
+    <div style="margin-bottom:12px;">
+      <span class="ioc-tag">http://malware-c2.example.com/gate.php</span>
+      <span class="ioc-tag">185.220.101.x</span>
+      <span class="ioc-tag">update-service.ru</span>
+    </div>
+    <h3>File Indicators</h3>
+    <div style="margin-bottom:12px;">
+      <span class="ioc-tag">%APPDATA%\update.exe</span>
+      <span class="ioc-tag">%TEMP%\loader.bin</span>
+    </div>
+    <h3>Registry Indicators</h3>
+    <div>
+      <span class="ioc-tag">HKCU\...\CurrentVersion\Run → Updater</span>
+    </div>
+  </div>
+
+  <!-- MITRE ATT&CK -->
+  <div class="card">
+    <h2>🛡 MITRE ATT&CK Mapping</h2>
+    <table>
+      <thead>
+        <tr><th>Tactic</th><th>Technique ID</th><th>Technique Name</th><th>Kanıt</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Execution</td>
+          <td><span class="mitre-id">T1059.001</span></td>
+          <td>PowerShell</td>
+          <td><code>powershell</code> string tespiti</td>
+        </tr>
+        <tr>
+          <td>Persistence</td>
+          <td><span class="mitre-id">T1547.001</span></td>
+          <td>Registry Run Keys</td>
+          <td><code>RegSetValueExA</code> + Run key string</td>
+        </tr>
+        <tr>
+          <td>Defense Evasion</td>
+          <td><span class="mitre-id">T1055.001</span></td>
+          <td>Process Injection</td>
+          <td><code>WriteProcessMemory</code> import</td>
+        </tr>
+        <tr>
+          <td>Defense Evasion</td>
+          <td><span class="mitre-id">T1622</span></td>
+          <td>Debugger Evasion</td>
+          <td><code>IsDebuggerPresent</code> import</td>
+        </tr>
+        <tr>
+          <td>C2</td>
+          <td><span class="mitre-id">T1071.001</span></td>
+          <td>Web Protocols</td>
+          <td>HTTP URL string</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Terminal Demo -->
+  <div class="card">
+    <h2>💻 Kullanım — Terminal</h2>
+    <div class="terminal"><span class="comment"># 1. Repoyu klonla</span>
+<span class="prompt">$</span> git clone https://github.com/semihkynr/reverse-engineering-framework
+<span class="prompt">$</span> cd reverse-engineering-framework
+
+<span class="comment"># 2. Demo script çalıştır (demo binary oluşturur ve analiz eder)</span>
+<span class="prompt">$</span> chmod +x run.sh && ./run.sh
+<span class="success">╔══════════════════════════════════════════════════════════╗
+║   BGT210 — Reverse Engineering Analysis Framework        ║
+╚══════════════════════════════════════════════════════════╝</span>
+<span class="output">[✓] Python 3.11 bulundu
+[*] Demo binary oluşturuluyor...
+[1/4] Dosya bilgileri
+  SHA256 : a3f1...
+[2/4] String extraction
+  [!] Suspicious: http://malware-c2.example.com/gate.php → URL
+  [!] Suspicious: WriteProcessMemory → Injection API
+[3/4] PE parser
+  Architecture : x86-64 (64-bit)
+  Packed       : False
+[4/4] Rapor oluşturuluyor</span>
+<span class="success">══════════════════════════════════
+  RISK LEVEL : HIGH
+  RISK SCORE : 65/100
+══════════════════════════════════
+[+] JSON report: reports/demo_sample_static_report.json
+[+] Markdown report: reports/demo_sample_static_report.md</span>
+
+<span class="comment"># 3. Gerçek binary analizi</span>
+<span class="prompt">$</span> ./run.sh /path/to/suspicious.exe
+
+<span class="comment"># 4. Docker ile çalıştır</span>
+<span class="prompt">$</span> docker-compose run analyzer --file samples/test.exe --output reports/
+
+<span class="comment"># 5. Sadece string extraction</span>
+<span class="prompt">$</span> python3 src/analyzer.py --file samples/test.exe --strings-only</div>
+  </div>
+
+  <!-- About the Project -->
+  <div class="card">
+    <h2>📌 Proje Hakkında — Ne İstendi?</h2>
+    <p style="color:var(--text-muted);margin-bottom:16px;font-size:13px;">
+      BGT210 — Reverse Engineering dersi kapsamında öğrencilerden, gerçek dünya senaryolarında
+      kullanılabilecek bir <strong style="color:var(--text);">tersine mühendislik metodolojisi</strong> ve
+      bunu destekleyen çalışan bir araç seti geliştirmeleri istenmiştir.
+    </p>
+    <div class="grid-2">
+      <div>
+        <h3>Dersin Beklentileri</h3>
+        <ul class="checklist">
+          <li><span class="check-ok">✓</span> Binary dosyaları analiz eden çalışan bir implementasyon</li>
+          <li><span class="check-ok">✓</span> Static analysis, dynamic analysis, network monitoring fazlarının belgelenmesi</li>
+          <li><span class="check-ok">✓</span> Araç karşılaştırması ve seçim kriterleri</li>
+          <li><span class="check-ok">✓</span> MITRE ATT&CK ile eşleştirme yapabilme</li>
+          <li><span class="check-ok">✓</span> Profesyonel raporlama şablonu</li>
+          <li><span class="check-ok">✓</span> Docker ile çalışan ortam</li>
+          <li><span class="check-ok">✓</span> Araştırma süreci ve öğrenme yolculuğu (ROADMAP)</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Neden Bu Proje Önemli?</h3>
+        <p style="color:var(--text-muted);font-size:13px;line-height:1.8;">
+          Zararlı yazılımların analizi, siber güvenliğin en kritik alanlarından biridir.
+          Bir binary'yi çalıştırmadan önce statik olarak incelemek (<strong style="color:var(--text);">static analysis</strong>),
+          ardından sandbox ortamında gözlemlemek (<strong style="color:var(--text);">dynamic analysis</strong>),
+          ve ürettiği ağ trafiğini yakalamak (<strong style="color:var(--text);">network monitoring</strong>)
+          — bu üç fazın sistematik ve tekrarlanabilir biçimde uygulanması,
+          bir malware analistinin temel yetkinliğini oluşturur.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- What We Built -->
+  <div class="card">
+    <h2>🔨 Neler Yaptık?</h2>
+    <div class="grid-2">
+      <div>
+        <h3>Metodoloji Dokümantasyonu</h3>
+        <ul class="checklist">
+          <li><span class="check-ok">✓</span> 4 fazlı RE metodolojisi adım adım belgelendi</li>
+          <li><span class="check-ok">✓</span> Her faz için ayrı checklist hazırlandı</li>
+          <li><span class="check-ok">✓</span> Mermaid ile karar akış diyagramı (decision flowchart) çizildi</li>
+          <li><span class="check-ok">✓</span> Mermaid ile süreç akış diyagramı (process flowchart) çizildi</li>
+          <li><span class="check-ok">✓</span> Tool comparison matrix hazırlandı (Disassembler, Debugger, Network, Sandbox)</li>
+          <li><span class="check-ok">✓</span> Profesyonel rapor şablonu (TLP, CVSS, MITRE dahil) oluşturuldu</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Python Araç Seti</h3>
+        <ul class="checklist">
+          <li><span class="check-ok">✓</span> <code>analyzer.py</code> — PE hash, entropy, import analizi, risk skoru</li>
+          <li><span class="check-ok">✓</span> <code>pe_parser.py</code> — external kütüphane olmadan manuel PE header ayrıştırması</li>
+          <li><span class="check-ok">✓</span> <code>string_extractor.py</code> — ASCII + wide string, base64 decode, pattern matching</li>
+          <li><span class="check-ok">✓</span> <code>report_generator.py</code> — JSON → Markdown rapor + MITRE ATT&CK mapping</li>
+          <li><span class="check-ok">✓</span> <code>run.sh</code> — tek komutla demo çalıştırma scripti</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin-top:20px;">Modül Dokümantasyonları</h3>
+    <div class="grid-3" style="margin-top:8px;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;">
+        <div style="color:var(--accent);font-weight:600;margin-bottom:8px;">Static Analysis</div>
+        <div style="color:var(--text-muted);font-size:12px;line-height:1.7;">
+          Dosya triage · Magic byte tespiti · PE header analizi ·
+          Section entropy · Import table · String extraction ·
+          Disassembly (Ghidra) · YARA rule matching
+        </div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;">
+        <div style="color:var(--orange);font-weight:600;margin-bottom:8px;">Dynamic Analysis</div>
+        <div style="color:var(--text-muted);font-size:12px;line-height:1.7;">
+          Sandbox ortamı kurulumu · ProcMon ile izleme ·
+          x64dbg debugger stratejisi · Anti-debug bypass ·
+          Memory dump · API call logging · Behavior timeline
+        </div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;">
+        <div style="color:var(--green);font-weight:600;margin-bottom:8px;">Network Monitoring</div>
+        <div style="color:var(--text-muted);font-size:12px;line-height:1.7;">
+          Wireshark packet capture · DNS/HTTP analizi ·
+          TLS intercept · C2 beaconing tespiti ·
+          DNS tunneling · IOC extraction · MITRE mapping
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:20px;">Öğrenme Sürecinde Karşılaşılan Zorluklar</h3>
+    <table style="margin-top:8px;">
+      <thead>
+        <tr><th>Zorluk</th><th>Yaklaşım</th><th>Sonuç</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Anti-debug bypass tekniklerinin anlaşılması</td>
+          <td>x64dbg ile <code>IsDebuggerPresent</code> return değerini manuel patch ettim</td>
+          <td>Teknik tam olarak anlaşıldı</td>
+        </tr>
+        <tr>
+          <td>Radare2 scripting API'sinin karmaşıklığı</td>
+          <td>r2pipe yerine Ghidra Python API'sine geçiş yapıldı</td>
+          <td>Daha temiz ve okunabilir kod</td>
+        </tr>
+        <tr>
+          <td>Otomatik unpacking güvenilirliği</td>
+          <td>UPX dışı packerlar için manuel OEP tespiti yaklaşımı benimsendi</td>
+          <td>Daha kontrollü analiz süreci</td>
+        </tr>
+        <tr>
+          <td>TLS şifreli C2 trafiğinin analizi</td>
+          <td>mitmproxy ile transparent proxy kurulumu, JA3 fingerprint analizi</td>
+          <td>Trafik pattern'i başarıyla tespit edildi</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <p>
+    BGT210 — Reverse Engineering · Istinye University · Spring 2025-2026 &nbsp;|&nbsp;
+    <strong>Semih Kaynar</strong> (<code>2420****1011</code>) &nbsp;|&nbsp;
+    Instructor: <a href="https://github.com/keyvanarasteh">Keyvan Arasteh</a> ·
+    <a href="https://qline.tech">qline.tech</a>
+  </p>
+</footer>
+
+</body>
+</html>
